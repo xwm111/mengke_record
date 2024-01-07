@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Audio Recorder</title>
+    <script src="RecordRTC.js"></script>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 20px;
+        color: #333;
+      }
+
+      h1 {
+        color: #5d5c61;
+      }
+      .history {
+        color: #5d5c61;
+      }
+      button {
+        background-color: #7395ae;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 20px;
+        transition: background-color 0.3s ease;
+      }
+
+      button:hover {
+        background-color: #557a95;
+      }
+
+      ul {
+        list-style-type: none;
+        padding: 0;
+      }
+
+      li {
+        margin: 10px 0;
+        padding: 10px;
+        background-color: #b1a296;
+        color: #fff;
+        border-radius: 5px;
+      }
+
+      a {
+        color: #fff;
+        font-weight: bold;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      #audio-list {
+        margin-top: 20px;
+      }
+
+      /* 省略之前的样式，添加新样式 */
+      @keyframes playAnimation {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.2);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .playing {
+        animation: playAnimation 1s infinite;
+        pointer-events: none; /* 禁止点击 */
+      }
+
+      .audio-icon {
+        cursor: pointer;
+        margin-right: 10px;
+      }
+
+      /* Style for the input fields and labels */
+      .input-group {
+        margin-bottom: 10px;
+      }
+
+      .input-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: #5d5c61;
+      }
+
+      .input-group input {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-sizing: border-box; /* Include padding and border in the element's width and height */
+      }
+
+      /* Style for error messages */
+      .error {
+        color: red;
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    
+    <h1>
+      Audio Recorder &&
+      <a class="history" href="history.html">Recorder History</a>
+    </h1>
+
+    <!-- Input fields for the codes with added class for styling -->
+    <div class="input-group">
+      <label for="patient-code">Patient Code:</label>
+      <input type="text" id="patient-code" maxlength="8" placeholder="Enter 8 digit code">
+    </div>
+    <div class="input-group">
+      <label for="doctor-code">Doctor Code:</label>
+      <input type="text" id="doctor-code" maxlength="8" placeholder="Enter 8 digit code">
+    </div>
+    <div class="input-group">
+      <label for="hospital-code">Hospital Code:</label>
+      <input type="text" id="hospital-code" maxlength="8" placeholder="Enter 8 digit code">
+    </div>
+
+    <!-- Error message placeholders -->
+    <div id="patient-code-error" class="error"></div>
+    <div id="doctor-code-error" class="error"></div>
+    <div id="hospital-code-error" class="error"></div>
+
+    <button id="start-btn">Play and Record Audio</button>
+
+    <h2>Recorded Audio Files</h2>
+    <ul id="audio-list"></ul>
+
+    <script>
+      let audioRecorder;
+      let audioBlob;
+
+      // 获取按钮和列表元素的引用
+      const startBtn = document.getElementById("start-btn");
+      const audioList = document.getElementById("audio-list");
+
+      // 播放音频和开始录制
+      startBtn.onclick = function () {
+        // Check if the codes are valid before proceeding
+        if (!saveCodes()) {
+          // If not valid, stop the function
+          return;
+        }
+
+        // 使用浏览器的navigator.mediaDevices接口获取麦克风的音频流
+        navigator.mediaDevices
+          .getUserMedia({ audio: true })
+          .then((stream) => {
+            // 创建MediaRecorder对象
+            audioRecorder = new RecordRTC(stream, {
+              type: "audio",
+              mimeType: "audio/wav", // 设置 MIME 类型为 audio/wav
+              recorderType: RecordRTC.StereoAudioRecorder, // 指定录音器类型为 StereoAudioRecorder
+              // 其他配置...
+              desiredSampRate: 16000, // 如果你想要一个特定的采样率
+            });
+
+            // 开始录音
+            audioRecorder.startRecording();
+             // 播放音频文件
+            const audio = new Audio("sweep_signal.wav");
+            audio.play();
+
+            // 添加播放动画并禁用按钮
+            startBtn.classList.add("playing");
+
+            // 监听音频播放结束事件
+            audio.onended = function () {
+              startBtn.classList.remove("playing");
+              // 停止录音
+              audioRecorder.stopRecording(() => {
+                // 获取录音文件
+                audioBlob = audioRecorder.getBlob();
+
+                // 创建一个用于上传的表单数据对象
+                const formData = new FormData();
+                formData.append("audio", audioBlob);
+
+                // Retrieve the codes from localStorage
+                const patientCode = localStorage.getItem('patientCode');
+                const doctorCode = localStorage.getItem('doctorCode');
+                const hospitalCode = localStorage.getItem('hospitalCode');
+
+                // Append the codes to the FormData object
+                formData.append("patientCode", patientCode);
+                formData.append("doctorCode", doctorCode);
+                formData.append("hospitalCode", hospitalCode);
+                
+                // 发送请求到服务器上传文件
+                fetch("/upload", {
+                  method: "POST",
+                  body: formData,
+                })
+                  .then((response) => response.json())
+                  .then((data) => {
+                    if (data.success) {
+                      // 上传成功后，将文件添加到列表中
+                      const listItem = document.createElement("li");
+                      listItem.innerHTML = `<a href="#" onclick="playAudio('${data.audioUrl}')">${data.audioName}</a>`;
+                      audioList.appendChild(listItem);
+                    } else {
+                      alert("Upload failed");
+                    }
+                  })
+                  .catch((error) => {
+                    console.error("Error uploading file:", error);
+                  });
+              });
+            };
+          })
+          .catch((error) => {
+            console.error("Error getting user media:", error);
+          });
+      };
+
+      // 播放录音文件
+      function playAudio(url) {
+        const audio = new Audio(url);
+        audio.play();
+      }
+
+      // 将playAudio函数暴露给全局作用域，以便可以在HTML中调用
+      window.playAudio = playAudio;
+
+      // Update the saveCodes function to include validation
+      function saveCodes() {
+        // Get the input values
+        const patientCode = document.getElementById('patient-code').value;
+        const doctorCode = document.getElementById('doctor-code').value;
+        const hospitalCode = document.getElementById('hospital-code').value;
+
+        // Validate the input values
+        let isValid = true;
+        if (!patientCode) {
+          document.getElementById('patient-code-error').textContent = 'Patient code is required.';
+          isValid = false;
+        } else {
+          document.getElementById('patient-code-error').textContent = '';
+        }
+        if (!doctorCode) {
+          document.getElementById('doctor-code-error').textContent = 'Doctor code is required.';
+          isValid = false;
+        } else {
+          document.getElementById('doctor-code-error').textContent = '';
+        }
+        if (!hospitalCode) {
+          document.getElementById('hospital-code-error').textContent = 'Hospital code is required.';
+          isValid = false;
+        } else {
+          document.getElementById('hospital-code-error').textContent = '';
+        }
+
+        // Only save to localStorage if all fields are valid
+        if (isValid) {
+          localStorage.setItem('patientCode', patientCode);
+          localStorage.setItem('doctorCode', doctorCode);
+          localStorage.setItem('hospitalCode', hospitalCode);
+        }
+
+        return isValid;
+      }
+
+      // Function to load codes from localStorage
+      function loadCodes() {
+        document.getElementById('patient-code').value = localStorage.getItem('patientCode') || '';
+        document.getElementById('doctor-code').value = localStorage.getItem('doctorCode') || '';
+        document.getElementById('hospital-code').value = localStorage.getItem('hospitalCode') || '';
+      }
+
+      // Call loadCodes when the page loads
+      window.onload = loadCodes;
+    </script>
+  </body>
+</html>

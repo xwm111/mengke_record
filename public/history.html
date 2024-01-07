@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Record Histroy</title>
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+        background-color: #f7f7f7;
+        margin: 0;
+        padding: 20px;
+    }
+    h1 {
+        color: #333;
+    }
+    a {
+        color: #333;
+    }
+    #fileList {
+        list-style: none;
+        padding: 0;
+    }
+    #fileList li {
+        background-color: #fff;
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    #fileList li .file-info {
+        flex-grow: 1;
+    }
+    #fileList li .button-group {
+        display: flex;
+        justify-content: flex-end;
+    }
+    #fileList li button {
+        padding: 5px 10px;
+        margin-left: 10px;
+        background-color: #5cb85c;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    #fileList li button:hover {
+        background-color: #4cae4c;
+    }
+    #fileList li button.download-button {
+        background-color: #337ab7;
+    }
+    #fileList li button.download-button:hover {
+        background-color: #286090;
+    }
+</style>
+</head>
+<body>
+<h1>Recorder Histroy &&  <a href="index.html">Audio Recorder</a></h1>
+<ul id="fileList">
+    <!-- 动态生成的文件列表将放在这里 -->
+</ul>
+
+<script>
+// 请求服务器获取录音文件列表
+fetch('/files')
+    .then(response => response.json())
+    .then(files => {
+        const list = document.getElementById('fileList');
+        files.forEach(file => {
+            const li = document.createElement('li');
+            
+            const fileInfo = document.createElement('div');
+            fileInfo.className = 'file-info';
+            fileInfo.innerText = file.name;
+            li.appendChild(fileInfo);
+            
+            const buttonGroup = document.createElement('div');
+            buttonGroup.className = 'button-group';
+            
+            // 添加播放按钮
+            const playButton = document.createElement('button');
+            playButton.innerText = 'play';
+            playButton.onclick = function() {
+                const audio = new Audio(file.url);
+                audio.play();
+            };
+            buttonGroup.appendChild(playButton);
+            
+            // 添加下载按钮
+            const downloadButton = document.createElement('button');
+            downloadButton.innerText = 'download';
+            downloadButton.classList.add('download-button');
+            downloadButton.onclick = function() {
+                const a = document.createElement('a');
+                a.href = file.url;
+                a.download = file.name;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            };
+            buttonGroup.appendChild(downloadButton);
+            
+            li.appendChild(buttonGroup);
+            list.appendChild(li);
+        });
+    })
+    .catch(error => {
+        console.error('There was an error fetching the files:', error);
+    });
+</script>
+</body>
+</html>
