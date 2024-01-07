@@ -1,7 +1,22 @@
 const express = require("express");
 const multer = require("multer");
 const path = require("path");
+const https = require('https');
 const fs = require("fs");
+
+
+// // 将两个证书文件读取放到options对象中
+// // 使用readFileSync()方法，顺序地执行读文件和启动服务操作
+// const options = {
+//   key: fs.readFileSync('./mengke.yaodaibang.com.key'),
+//   cert: fs.readFileSync('./mengke.yaodaibang.com.pem')
+// };
+
+// 读取SSL证书和私钥
+const privateKey = fs.readFileSync(path.join(__dirname, 'mengke.yaodaibang.com.key'), 'utf8');
+const certificate = fs.readFileSync(path.join(__dirname, 'mengke.yaodaibang.com.pem'), 'utf8');
+const credentials = { key: privateKey, cert: certificate };
+
 // 临时保存文件名信息
 let tempUploads = {};
 // 时间戳格式化函数
@@ -147,4 +162,15 @@ const PORT = process.env.PORT || 3000;
 // 启动服务器
 app.listen(PORT, function () {
   console.log(`Server is running on port ${PORT}`);
+});
+
+// 创建HTTPS服务器
+const httpsServer = https.createServer(credentials, app);
+
+// 设置HTTPS服务器监听的端口
+const HTTPS_PORT = process.env.HTTPS_PORT || 443;
+
+// 让服务器开始监听请求
+httpsServer.listen(HTTPS_PORT, () => {
+  console.log(`HTTPS Server running on port ${HTTPS_PORT}`);
 });
