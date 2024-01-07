@@ -110,10 +110,20 @@
         color: red;
         margin-bottom: 10px;
       }
+
+      /* Style for the select dropdown */
+      .input-group select {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: white;
+        box-sizing: border-box; /* Include padding and border in the element's width and height */
+      }
     </style>
   </head>
   <body>
-    
     <h1>
       Audio Recorder &&
       <a class="history" href="history.html">Recorder History</a>
@@ -121,22 +131,29 @@
 
     <!-- Input fields for the codes with added class for styling -->
     <div class="input-group">
-      <label for="patient-code">Patient Code:</label>
-      <input type="text" id="patient-code" maxlength="8" placeholder="Enter 8 digit code">
-    </div>
-    <div class="input-group">
       <label for="doctor-code">Doctor Code:</label>
-      <input type="text" id="doctor-code" maxlength="8" placeholder="Enter 8 digit code">
-    </div>
-    <div class="input-group">
-      <label for="hospital-code">Hospital Code:</label>
-      <input type="text" id="hospital-code" maxlength="8" placeholder="Enter 8 digit code">
+      <input
+        type="text"
+        id="doctor-code"
+        maxlength="8"
+        placeholder="Enter Doctor code"
+      />
     </div>
 
     <!-- Error message placeholders -->
     <div id="patient-code-error" class="error"></div>
     <div id="doctor-code-error" class="error"></div>
     <div id="hospital-code-error" class="error"></div>
+
+    <!-- Input field for the condition with added class for styling -->
+    <div class="input-group">
+      <label for="condition-select">Condition:</label>
+      <select id="condition-select">
+        <option value="1">Ear Drum Rupture</option>
+        <option value="2">Ear Effusion</option>
+        <option value="3">Normal</option>
+      </select>
+    </div>
 
     <button id="start-btn">Play and Record Audio</button>
 
@@ -174,7 +191,7 @@
 
             // 开始录音
             audioRecorder.startRecording();
-             // 播放音频文件
+            // 播放音频文件
             const audio = new Audio("sweep_signal.wav");
             audio.play();
 
@@ -194,15 +211,13 @@
                 formData.append("audio", audioBlob);
 
                 // Retrieve the codes from localStorage
-                const patientCode = localStorage.getItem('patientCode');
-                const doctorCode = localStorage.getItem('doctorCode');
-                const hospitalCode = localStorage.getItem('hospitalCode');
+                const doctorCode = localStorage.getItem("doctorCode");
+                const condition = localStorage.getItem('condition');
+                formData.append("condition", condition);
 
                 // Append the codes to the FormData object
-                formData.append("patientCode", patientCode);
                 formData.append("doctorCode", doctorCode);
-                formData.append("hospitalCode", hospitalCode);
-                
+
                 // 发送请求到服务器上传文件
                 fetch("/upload", {
                   method: "POST",
@@ -242,36 +257,25 @@
       // Update the saveCodes function to include validation
       function saveCodes() {
         // Get the input values
-        const patientCode = document.getElementById('patient-code').value;
-        const doctorCode = document.getElementById('doctor-code').value;
-        const hospitalCode = document.getElementById('hospital-code').value;
+        const doctorCode = document.getElementById("doctor-code").value;
 
         // Validate the input values
         let isValid = true;
-        if (!patientCode) {
-          document.getElementById('patient-code-error').textContent = 'Patient code is required.';
-          isValid = false;
-        } else {
-          document.getElementById('patient-code-error').textContent = '';
-        }
+        
         if (!doctorCode) {
-          document.getElementById('doctor-code-error').textContent = 'Doctor code is required.';
+          document.getElementById("doctor-code-error").textContent =
+            "Doctor code is required.";
           isValid = false;
         } else {
-          document.getElementById('doctor-code-error').textContent = '';
+          document.getElementById("doctor-code-error").textContent = "";
         }
-        if (!hospitalCode) {
-          document.getElementById('hospital-code-error').textContent = 'Hospital code is required.';
-          isValid = false;
-        } else {
-          document.getElementById('hospital-code-error').textContent = '';
-        }
+       
 
         // Only save to localStorage if all fields are valid
         if (isValid) {
-          localStorage.setItem('patientCode', patientCode);
-          localStorage.setItem('doctorCode', doctorCode);
-          localStorage.setItem('hospitalCode', hospitalCode);
+          localStorage.setItem("doctorCode", doctorCode);
+          const condition = document.getElementById('condition-select').value;
+          localStorage.setItem('condition', condition);
         }
 
         return isValid;
@@ -279,9 +283,7 @@
 
       // Function to load codes from localStorage
       function loadCodes() {
-        document.getElementById('patient-code').value = localStorage.getItem('patientCode') || '';
-        document.getElementById('doctor-code').value = localStorage.getItem('doctorCode') || '';
-        document.getElementById('hospital-code').value = localStorage.getItem('hospitalCode') || '';
+        document.getElementById("doctor-code").value =localStorage.getItem("doctorCode") || "";
       }
 
       // Call loadCodes when the page loads

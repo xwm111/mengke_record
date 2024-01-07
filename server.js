@@ -81,9 +81,9 @@ app.post("/upload", upload.single("audio"), function (req, res) {
     const fileInfo = tempUploads[tempFilename];
 
     // 检查是否有必要的字段信息
-    if (req.body.patientCode && req.body.doctorCode && req.body.hospitalCode) {
+    if ( req.body.doctorCode && req.body.condition) {
       // 构建新的文件名
-      const newFilename = `H-${req.body.hospitalCode}-D-${req.body.doctorCode}-P-${req.body.patientCode}-${tempFilename}`;
+      const newFilename = `D-${req.body.doctorCode}-${req.body.condition}-${tempFilename}`;
       // 获取文件的旧路径和新路径
       const oldPath = path.join("uploads", tempFilename);
       const newPath = path.join("uploads", newFilename);
