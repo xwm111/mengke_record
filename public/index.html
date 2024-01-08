@@ -149,8 +149,8 @@
     <div class="input-group">
       <label for="condition-select">Condition:</label>
       <select id="condition-select">
-        <option value="1">Ear Drum Rupture</option>
-        <option value="2">Ear Effusion</option>
+        <option value="1">TMP</option>
+        <option value="2">OME</option>
         <option value="3">Normal</option>
       </select>
     </div>
@@ -186,7 +186,7 @@
               mimeType: "audio/wav", // 设置 MIME 类型为 audio/wav
               recorderType: RecordRTC.StereoAudioRecorder, // 指定录音器类型为 StereoAudioRecorder
               // 其他配置...
-              desiredSampRate: 16000, // 如果你想要一个特定的采样率
+              desiredSampRate: 48000, // 如果你想要一个特定的采样率
             });
 
             // 开始录音
